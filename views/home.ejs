@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Web socket</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<script src="jquery.js"></script>
+	<script type="text/javascript">
+		var name;
+		if(localStorage.getItem("name")===null){
+			(window).location.href="/create-user";
+		}
+		name=localStorage.getItem("name");
+	</script>
+	<script src="socket.io/socket.io.js"></script>
+</head>
+<body>
+	<h1 class="center">Welcome to Group chat</h1>
+	<div class="main">
+		<div class="users">
+			<div class="users-online">
+				<ul>
+					
+				</ul>
+			</div>
+		</div>
+		<div class="chat-box">
+			<div class="list-message">
+				
+			</div>
+			<div class="input-field">
+				<input type="text" name="message" placeholder="Input...." autocomplete="off">
+				<button name="submit-msg" type="button"><i class="fa fa-send"></i></button>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript">
+		var socket=io("http://localhost:3000");
+		$(document).ready(function(){
+			socket.emit('Newuser-join',name);
+
+			socket.on('Server-send-new-user',function(data){
+				var noti='<p class="noti">'+data.name+' đã tham gia cuộc trò chuyện.. </p>';
+				$('.list-message').append(noti);
+				var user_online='<li id="'+data.id+'"><i class="fa fa-circle"></i> <b>'+ data.name+'</b></li>';
+				$('.users-online ul').append(user_online);
+			});
+
+			socket.on('Server-send-list-user',function(data){
+				var noti='<p class="noti">'+data.auth.name+' đã tham gia cuộc trò chuyện.. </p>';
+				$('.list-message').append(noti);
+			
+				data.users.forEach(function(user,index){
+					user_online='<li id="'+user.id+'"><i class="fa fa-circle"></i> <b>'+ user.name+'</b></li>';
+					$('.users-online ul').append(user_online);
+				});
+			});
+
+			socket.on('Server-send-user-offline',function(data){
+				var target=$('.users-online li#'+data);
+				var name=target.find('b').html();
+				var noti='<p class="noti">'+name+' đã rời khỏi cuộc trò chuyện.. </p>';
+				$('.list-message').append(noti);
+				target.remove();
+			});
+
+			socket.on('Server-send-data',function(data){
+				var message_item='<div class="message-item others"><p class="name">'+data.name+'</p><span class="message-content">'+data.msg+'</span></div>';
+				$('.list-message').append(message_item);
+			});
+			$('button[name="submit-msg"]').click(function(){
+				var msg=$("input[name='message']").val().trim();
+				$("input[name='message']").val('');
+				if(msg==='') return false;
+				socket.emit('Client-send-mgs',{msg:msg,name:name});
+
+				var message_item='<div class="message-item owner"><p class="name">'+name+'</p><span class="message-content">'+msg+'</span></div>';
+
+				$('.list-message').append(message_item);
+			});
+		});
+	</script>
+</body>
+</html>
