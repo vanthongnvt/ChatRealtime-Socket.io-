@@ -21,14 +21,26 @@ server.listen(3000);
 
 // app.listen(3000);
 
+
+var arr_users=[];
 //listen connection
 io.on("connection",function(socket){
 
 	console.log(socket.id + " connected");
 
 	socket.on("disconnect",function(){
+		
+		if(typeof socket.username === 'undefined'){
+			return false;
+		}
+
+		console.log(socket.id + " disconnected");
+		//use array
+		arr_users.splice(arr_users.indexOf(socket.username),1);
+
 		io.emit('Server-send-user-offline',socket.id);
 
+		//use file
 		var file=fs.readFileSync('users.json',{encoding: 'utf-8', flag: 'r'});
 		file=JSON.parse(file);
 
@@ -47,6 +59,11 @@ io.on("connection",function(socket){
 
 	socket.on('Newuser-join',function(name){
 
+		//use array
+		arr_users.push(name);
+		socket.username=name;
+
+		//use file
 		var file=fs.readFileSync('users.json',{encoding: 'utf-8', flag: 'r'});
 		file=JSON.parse(file);
 
@@ -61,7 +78,25 @@ io.on("connection",function(socket){
 		socket.emit('Server-send-list-user',data);
 
 		fs.writeFileSync('users.json',JSON.stringify(file),{encoding: 'utf-8', flag: 'w'});
-	})
+	});
+
+	socket.on('Create-user',function(data){
+		if(arr_users.indexOf(data)>=0){
+			socket.emit('Create-user-failed');
+		}
+		else{
+			socket.emit('Create-user-sucessed');
+		}
+	});
+
+
+	socket.on('Client-typing',function(){
+		socket.broadcast.emit('Noti-user-typing',{name:socket.username,id:socket.id});
+	});
+
+	socket.on('Client-stop-typing',function(){
+		socket.broadcast.emit('Noti-user-stop-typing',{name:socket.username,id:socket.id});
+	});
 });
 
 app.get('/',function(req,res){

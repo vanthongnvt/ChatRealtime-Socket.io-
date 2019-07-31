@@ -5,6 +5,7 @@
 	<title>Create User</title>
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<script src="jquery.js"></script>
+	<script src="socket.io/socket.io.js"></script>
 </head>
 <body>
 	<div class="create-user-form">
@@ -15,12 +16,25 @@
 		</div>
 	</div>
 	<script type="text/javascript">
+		var socket=io("http://localhost:3000");
 		$(document).ready(function(){
-			$('button').click(function(){
-				var name=$('input').val().trim();
-				if(name==='') return false;
+			var name=null;
+			socket.on('Create-user-failed',function(){
+				alert('Tên này đã được sử dụng. Hãy chọn tên khác');
+			});
+
+			socket.on('Create-user-sucessed',function(){
 				localStorage.setItem("name", name);
 				(window).location.href="/";
+			});
+
+			$('button').click(function(){
+				name=$('input').val().trim();
+				if(name===''){
+					name=null;
+					return false;
+				}
+				socket.emit('Create-user',name);
 			})
 		});
 	</script>

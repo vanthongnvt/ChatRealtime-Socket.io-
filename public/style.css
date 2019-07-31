@@ -29,11 +29,26 @@ body{
 	margin: 10px;
 	box-sizing: border-box;
 	overflow-y: auto;
+	position: relative;
 }
 .list-message .noti{
     font-size: 11px;
     text-align: center;
     color: #777171;
+}
+.list-typing-noti{
+	height: 20px;
+}
+.list-typing-noti .typing-noti{
+	display: none;
+    font-size: 12px;
+    text-align: center;
+    padding: 3px;
+    color: #404040;
+    line-height: 20px;
+}
+.list-typing-noti .typing-noti:nth-child(1){
+	display: block;
 }
 .message-item{
 	padding: 10px 0;

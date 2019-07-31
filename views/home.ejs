@@ -12,11 +12,12 @@
 			(window).location.href="/create-user";
 		}
 		name=localStorage.getItem("name");
+		localStorage.removeItem("name");
 	</script>
 	<script src="socket.io/socket.io.js"></script>
 </head>
 <body>
-	<h1 class="center">Welcome to Group chat</h1>
+	<h1 class="center">Welcome to Server chat</h1>
 	<div class="main">
 		<div class="users">
 			<div class="users-online">
@@ -27,8 +28,8 @@
 		</div>
 		<div class="chat-box">
 			<div class="list-message">
-				
 			</div>
+			<div class="list-typing-noti"></div>
 			<div class="input-field">
 				<input type="text" name="message" placeholder="Input...." autocomplete="off">
 				<button name="submit-msg" type="button"><i class="fa fa-send"></i></button>
@@ -37,6 +38,7 @@
 	</div>
 	<script type="text/javascript">
 		var socket=io("http://localhost:3000");
+
 		$(document).ready(function(){
 			socket.emit('Newuser-join',name);
 
@@ -50,7 +52,7 @@
 			socket.on('Server-send-list-user',function(data){
 				var noti='<p class="noti">'+data.auth.name+' đã tham gia cuộc trò chuyện.. </p>';
 				$('.list-message').append(noti);
-			
+
 				data.users.forEach(function(user,index){
 					user_online='<li id="'+user.id+'"><i class="fa fa-circle"></i> <b>'+ user.name+'</b></li>';
 					$('.users-online ul').append(user_online);
@@ -69,6 +71,18 @@
 				var message_item='<div class="message-item others"><p class="name">'+data.name+'</p><span class="message-content">'+data.msg+'</span></div>';
 				$('.list-message').append(message_item);
 			});
+
+			socket.on('Noti-user-typing',function(data){
+				var el=$('#type_'+data.id);
+				if(el.length!==0) return false;
+				$('.list-typing-noti').append('<p class="typing-noti" id="type_'+ data.id +'" ><b class="name">'+data.name+'</b> đang nhập tin nhắn ...</p>');
+			})
+
+			socket.on('Noti-user-stop-typing',function(data){
+				$('#type_'+data.id).remove();
+			});
+
+
 			$('button[name="submit-msg"]').click(function(){
 				var msg=$("input[name='message']").val().trim();
 				$("input[name='message']").val('');
@@ -79,6 +93,21 @@
 
 				$('.list-message').append(message_item);
 			});
+
+			$('input[name="message"]').keyup(function(){
+				var text=$(this).val();
+				if(text===''){
+					socket.emit('Client-stop-typing');
+				}
+				else{
+					socket.emit('Client-typing');
+				}
+			});
+
+			$('input[name="message"]').focusout(function(){
+				socket.emit('Client-stop-typing');
+			});
+
 		});
 	</script>
 </body>
